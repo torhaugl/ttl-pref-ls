@@ -1,0 +1,18 @@
+[project]
+name = "ttl-pref-ls"
+version = "0.1.1"
+description = "Turtle language server that resolves skos:prefLabel"
+requires-python = ">=3.10"
+
+dependencies = [
+  "lsprotocol>=2023.0.1",
+  "pygls>=1.3,<2.0",
+  "rdflib>=7.0,<8.0",
+]
+
+[project.scripts]
+ttl-pref-ls = "ttl_pref_ls.server:start_io"
+
+[tool.setuptools.packages.find]
+where    = ["."]
+exclude  = ["figs*", "tests*"]
