@@ -14,6 +14,7 @@ import sys
 from typing import Dict, List
 
 from pygls.server import LanguageServer
+from rdflib.namespace import RDF
 from lsprotocol import types
 
 from .indexer import build as build_index, DocumentIndex
@@ -144,16 +145,52 @@ def hover(ls: TurtlePrefLanguageServer, params: types.HoverParams):
 
     pos = params.position
     iri = idx.iri_at(pos.line, pos.character)
+
+    # ------------------------------------------------------------
+    # Special case: cursor on literal token "a" (rdf:type)
+    # ------------------------------------------------------------
     if iri is None:
-        return None
+        try:
+            line_txt = ls.workspace.get_document(params.text_document.uri).lines[pos.line]
+        except Exception:
+            line_txt = ""
+        col = pos.character
+        # crude word extraction
+        start = col
+        end = col
+        while start > 0 and line_txt[start-1].isalnum():
+            start -= 1
+        while end < len(line_txt) and line_txt[end].isalnum():
+            end += 1
+        token = line_txt[start:end]
+        if token == "a":
+            iri = RDF.type
+            # fabricate a range so Neovim shows hover even when idx misses it
+            range_override = types.Range(
+                start=types.Position(line=pos.line, character=start),
+                end=types.Position(line=pos.line, character=end),
+            )
+        else:
+            return None
+    else:
+        range_override = None
 
     label = idx.labels.get(iri)
-    if not label:
-        return None  # no label ⇒ no hover
-
     display = _pretty_iri(idx, str(iri))
-    md = f"**prefLabel:** {label}\n\n`{display}`"
-    return types.Hover(contents=types.MarkupContent(kind="markdown", value=md))
+    full_uri = f"<{str(iri)}>"
+
+    if label:
+        md = f"""{full_uri}
+`{display}`
+**prefLabel:** {label}"""
+    else:
+        md = f"""{full_uri}
+`{display}`"""
+
+    return types.Hover(
+        contents=types.MarkupContent(kind="markdown", value=md),
+        range=range_override,
+    )
 
 # ---------------------------------------------------------------------------
 # DIAGNOSTICS  – underline **every** occurrence of unlabeled IRIs/QNames
