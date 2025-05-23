@@ -1,11 +1,11 @@
 """ttl_pref_ls.server
 ~~~~~~~~~~~~~~~~~~~~~
-Turtle-aware language server that provides
+Turtle‑aware language server that provides
 * hover with `skos:prefLabel`
 * Hint diagnostics for resources missing a label (now **all occurrences**)
-* inline inlay-hints (virtual text) showing the prefLabel next to each IRI/QName
+* inline inlay‑hints (virtual text) showing the prefLabel next to each IRI/QName
 
-It re-uses the **indexer** for all semantic & lexical data.
+It re‑uses the **indexer** for all semantic & lexical data.
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ logging.basicConfig(
 log = logging.getLogger("ttl_pref_ls")
 
 # ---------------------------------------------------------------------------
-# Small util: pretty-print an absolute IRI as QName if a prefix matches
+# Small util: pretty‑print an absolute IRI as QName if a prefix matches
 # ---------------------------------------------------------------------------
 
 def _pretty_iri(idx: DocumentIndex, iri: str) -> str:
@@ -39,7 +39,7 @@ def _pretty_iri(idx: DocumentIndex, iri: str) -> str:
     return f"<{iri}>"  # fallback
 
 # ---------------------------------------------------------------------------
-# Language-server class
+# Language‑server class
 # ---------------------------------------------------------------------------
 
 class TurtlePrefLanguageServer(LanguageServer):
@@ -63,6 +63,11 @@ def on_initialize(ls: TurtlePrefLanguageServer, params: types.InitializeParams):
     capabilities = types.ServerCapabilities(
         hover_provider=True,
         inlay_hint_provider=True,
+        text_document_sync=types.TextDocumentSyncOptions(
+            open_close=True,
+            change=types.TextDocumentSyncKind.Full,  # client will send whole text
+            save=None,
+        ),
     )
     server_info = types.InitializeResultServerInfoType(name=ls.name, version=ls.version)
     return types.InitializeResult(capabilities=capabilities, server_info=server_info)
@@ -72,6 +77,16 @@ def on_initialize(ls: TurtlePrefLanguageServer, params: types.InitializeParams):
 # ---------------------------------------------------------------------------
 
 def _index_and_store(ls: TurtlePrefLanguageServer, uri: str, text: str):
+    """(Re)build the index; swallow parser errors so edits never crash LSP."""
+    try:
+        idx = build_index(text)
+    except Exception as exc:
+        log.debug("parse error ignored: %s", exc)
+        return  # keep previous diagnostics until text is syntactically valid
+
+    ls._documents[uri] = idx
+    log.info("indexed %d URIs / %d prefLabels (%s)", len(idx.uris), len(idx.labels), uri)
+    _publish_diagnostics(ls, uri, idx)
     idx = build_index(text)
     ls._documents[uri] = idx
     log.info("indexed %d URIs / %d prefLabels (%s)", len(idx.uris), len(idx.labels), uri)
@@ -83,13 +98,39 @@ def _index_and_store(ls: TurtlePrefLanguageServer, uri: str, text: str):
 def did_open(ls: TurtlePrefLanguageServer, params: types.DidOpenTextDocumentParams):
     _index_and_store(ls, params.text_document.uri, params.text_document.text)
 
-# didChange (full-text) -------------------------------------------------------
+# didChange (full‑text) -------------------------------------------------------
 
 @ls.feature(types.TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls: TurtlePrefLanguageServer, params: types.DidChangeTextDocumentParams):
-    if not params.content_changes:
-        return
-    _index_and_store(ls, params.text_document.uri, params.content_changes[0].text)
+    """Handle incremental changes – always reparse the *current* buffer.
+
+    Neovim sends Type1 (range‑based) edits even when the server advertises
+    *Full* sync, but `pygls` automatically applies them to its internal
+    `Document` object.  So we simply read the up‑to‑date source from the
+    workspace cache and re‑index that.
+    """
+    try:
+        full_text = ls.workspace.get_document(params.text_document.uri).source
+    except Exception:
+        return  # no document cache yet
+
+    _index_and_store(ls, params.text_document.uri, full_text)
+
+
+    # With TextDocumentSyncKind.Full we always get the entire file content in
+    # the *last* change entry.
+    full_text = params.content_changes[-1].text
+
+    # If the client still sent an incremental patch (e.g. user config override),
+    # fall back to the full text held by pygls' workspace cache.
+    if full_text == "":
+        try:
+            full_text = ls.workspace.get_document(params.text_document.uri).source
+        except Exception:
+            return  # cannot recover – skip re‑index until next full change
+
+    _index_and_store(ls, params.text_document.uri, full_text)
+
 
 # ---------------------------------------------------------------------------
 # HOVER
@@ -146,7 +187,7 @@ def _publish_diagnostics(ls: LanguageServer, uri: str, idx: DocumentIndex):
     ls.publish_diagnostics(uri, diags)
 
 # ---------------------------------------------------------------------------
-# INLAY-HINTS
+# INLAY‑HINTS
 # ---------------------------------------------------------------------------
 
 @ls.feature(types.TEXT_DOCUMENT_INLAY_HINT)
@@ -183,3 +224,4 @@ def start_io() -> None:
 
 if __name__ == "__main__":
     start_io()
+
