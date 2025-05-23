@@ -193,8 +193,12 @@ def _publish_diagnostics(ls: LanguageServer, uri: str, idx: DocumentIndex):
     for iri in idx.uris:
         if iri in idx.labels:
             continue
+        ns = _ns_base(idx, str(iri))
+        # only test for EMMO
+        if ns != "https://w3id.org/emmo#":
+            continue
         # queue remote resolution once per namespace
-        maybe_resolve(_ns_base(idx, str(iri)), _on_remote_labels)
+        maybe_resolve(ns, _on_remote_labels)
 
         str_iri = str(iri)
         for line, ranges in idx.ranges.items():
@@ -209,7 +213,7 @@ def _publish_diagnostics(ls: LanguageServer, uri: str, idx: DocumentIndex):
                         ),
                         severity=types.DiagnosticSeverity.Hint,
                         source="ttl-pref-ls",
-                        message=f"No skos:prefLabel defined for {_pretty_iri(idx, str_iri)}",
+                        message=f"No skos:prefLabel found for {_pretty_iri(idx, str_iri)}",
                     )
                 )
 
