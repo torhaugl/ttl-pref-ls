@@ -74,6 +74,8 @@ def build(text: str) -> DocumentIndex:
     for s, p, o in g:
         if isinstance(s, URIRef):
             idx.uris.add(s)
+        if isinstance(p, URIRef):
+            idx.uris.add(p)
         if isinstance(o, URIRef):
             idx.uris.add(o)
         if p == SKOS.prefLabel and isinstance(s, URIRef) and o.datatype is None:

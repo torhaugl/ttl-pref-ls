@@ -11,3 +11,8 @@ emmo:EMMO_500b132d_a3e0_4ecd_8afc_1657bf78490f
 # Expected prefLabel: "Arrangement"
 emmo:EMMO_36c79456_e29c_400d_8bd3_0eedddb82652
     rdfs:subClassOf  emmo:EMMO_500b132d_a3e0_4ecd_8afc_1657bf78490f .
+
+# Subject does not have prefLabel. Predicate can also be hovered.
+emmo:EMMO_00000000_0000_0000_0000_000000000000
+    emmo:EMMO_c4bace1d_4db0_4cd3_87e9_18122bae2840
+        emmo:EMMO_500b132d_a3e0_4ecd_8afc_1657bf78490f .
