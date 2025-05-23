@@ -1,0 +1,13 @@
+@prefix emmo: <https://w3id.org/emmo#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Local label (should work even without internet)
+emmo:EMMO_500b132d_a3e0_4ecd_8afc_1657bf78490f
+    a               rdfs:Class ;
+    skos:prefLabel  "Material"@en .
+
+# Remote-only label (will be fetched from https://w3id.org/emmo)
+# Expected prefLabel: "Arrangement"
+emmo:EMMO_36c79456_e29c_400d_8bd3_0eedddb82652
+    rdfs:subClassOf  emmo:EMMO_500b132d_a3e0_4ecd_8afc_1657bf78490f .
