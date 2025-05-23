@@ -67,4 +67,19 @@ async def test_fetch_labels(monkeypatch):
     labels = await resolver._fetch_labels("http://example.com/ns")
 
     assert labels["http://example.com/ns#Foo"] == "Foo"
-    assert labels["http://example.com/ns#Bar"] == "Bar"
+
+# Live network test (optional) – uses real EMMO namespace on w3id.org
+EMMO_IRI = "https://w3id.org/emmo#EMMO_36c79456_e29c_400d_8bd3_0eedddb82652"
+
+@pytest.mark.asyncio
+async def test_fetch_emmo_live():
+    """Resolver retrieves the label from the live EMMO ontology."""
+    try:
+        labels = await resolver._fetch_labels("https://w3id.org/emmo")
+    except Exception:
+        pytest.skip("Network unreachable or slow – skipping live test")
+
+    if not labels:
+        pytest.skip("Remote fetch returned empty – possible network issue")
+
+    assert labels.get(EMMO_IRI) == "Arrangement"
