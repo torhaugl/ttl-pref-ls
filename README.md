@@ -61,6 +61,8 @@ URIs like [EMMO](http://www.w3id.org/emmo#).
 
 ![Hover in EMMO](/figs/emmo.png)
 
+![Diagnostics and inline hints in EMMO](/figs/emmo2.png)
+
 ## AI Attribution
 
 Large parts of this code is automatically generated with an LLM (ChatGPT-o3)
