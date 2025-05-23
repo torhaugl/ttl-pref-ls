@@ -1,0 +1,21 @@
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ns:   <http://example.com/ns#> .
+
+# Labelled resource written as a QName
+ns:alice
+    a               foaf:Person ;
+    skos:prefLabel  "Alice"@en ;
+    foaf:knows      ns:bob ,
+                    ns:charlie .
+
+# Labelled resource written with a full IRI
+<http://example.com/ns#bob>
+    a               foaf:Person ;
+    skos:prefLabel  "Bob"@en ;
+    foaf:knows      ns:alice .
+
+# Unlabelled resource
+ns:charlie
+    a               foaf:Person ;
+    foaf:knows      ns:alice .
