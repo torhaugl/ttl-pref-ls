@@ -55,6 +55,12 @@ Inlay hints show up next to the IRI with the prefLabel.
 
 ![Hover and diagnostics](/figs/neovim.png)
 
+The functionality also works with external prefixes, as long as there is an
+internet connection. This is very useful for ontologies that uses UUIDs for
+URIs like [EMMO](http://www.w3id.org/emmo#).
+
+![Hover in EMMO](/figs/emmo.png)
+
 ## AI Attribution
 
 Large parts of this code is automatically generated with an LLM (ChatGPT-o3)
