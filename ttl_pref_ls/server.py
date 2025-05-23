@@ -41,12 +41,20 @@ def _pretty_iri(idx: DocumentIndex, iri: str) -> str:
     return f"<{iri}>"  # fallback
 
 
-def _ns_base(iri: str) -> str:
-    """Return namespace base part of an IRI (up to last '#' or '/')."""
+def _ns_base(idx: DocumentIndex, iri: str) -> str:
+    """Return namespace base using declared prefixes when possible.
+
+    1. If the IRI starts with any declared namespace in ``idx.prefixes``
+       return that namespace string.
+    2. Otherwise fall back to slicing at the last '#' or '/'.
+    """
+    for ns in idx.prefixes.values():
+        if iri.startswith(ns):
+            return ns
     for sep in ("#", "/"):
         if sep in iri:
             return iri.rsplit(sep, 1)[0] + sep
-    return iri  # unusual but safe
+    return iri
 
 # ---------------------------------------------------------------------------
 # Language‑server class
@@ -96,7 +104,7 @@ def _on_remote_labels(new_pairs: Dict[str, str]):
     # Re‑publish diagnostics & notify inlay‑hints refresh
     for uri, idx in ls._documents.items():
         _publish_diagnostics(ls, uri, idx)
-    ls.notify("$/refreshInlayHints", {})
+    ls.send_notification("$/refreshInlayHints", {})
 
 
 def _index_and_store(ls: TurtlePrefLanguageServer, uri: str, text: str):
@@ -186,7 +194,7 @@ def _publish_diagnostics(ls: LanguageServer, uri: str, idx: DocumentIndex):
         if iri in idx.labels:
             continue
         # queue remote resolution once per namespace
-        maybe_resolve(_ns_base(str(iri)), _on_remote_labels)
+        maybe_resolve(_ns_base(idx, str(iri)), _on_remote_labels)
 
         str_iri = str(iri)
         for line, ranges in idx.ranges.items():
