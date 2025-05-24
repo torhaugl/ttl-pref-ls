@@ -131,3 +131,22 @@ async def _fetch_labels(ns_base: str) -> Dict[str, str]:
             labels[str(s)] = str(o)
 
     return labels
+
+
+def get_labels_for_namespace(ns_base: str) -> dict[str, str]:
+    """Return cached {iri: label} for a namespace or {} if not fetched yet."""
+    return {iri: lbl for iri, lbl in _remote_labels.items() if iri.startswith(ns_base)}
+
+
+def sync_resolve(ns_base: str, timeout: float = 0.3) -> dict[str, str]:
+    """
+    Ensure labels for this namespace are cached.
+    Blocks up to `timeout` seconds, then returns whatever is available.
+    """
+    loop = asyncio.get_event_loop()
+    task = maybe_resolve(ns_base, lambda _: None)
+    try:
+        loop.run_until_complete(asyncio.wait_for(task, timeout))
+    except Exception:
+        pass
+    return get_labels_for_namespace(ns_base)
