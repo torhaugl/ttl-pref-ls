@@ -126,9 +126,27 @@ async def _fetch_labels(ns_base: str) -> Dict[str, str]:
             return {}
 
     labels: Dict[str, str] = {}
-    for s, p, o in g.triples((None, SKOS.prefLabel, None)):
-        if isinstance(s, URIRef) and o.datatype is None:
-            labels[str(s)] = str(o)
+#    for s, p, o in g.triples((None, SKOS.prefLabel, None)):
+#        if isinstance(s, URIRef) and o.datatype is None:
+#            labels[str(s)] = str(o)
+    # --- collect *every* URI in that namespace ------------------------
+    def _local_name(u: str) -> str:          # fallback label
+        if "#" in u:
+            return u.rsplit("#", 1)[1]
+        return u.rsplit("/", 1)[-1]
+
+    for s, p, o in g:
+        for term in (s, p, o):
+            if not isinstance(term, URIRef):
+                continue
+            term_str = str(term)
+            if not term_str.startswith(ns_base):
+                continue
+
+            # keep existing prefLabel or add fallback
+            if term_str not in labels:
+                lbl = g.value(term, SKOS.prefLabel)
+                labels[term_str] = str(lbl) if lbl else _local_name(term_str)
 
     return labels
 
