@@ -26,10 +26,10 @@ return {
   filetypes = { 'turtle' },
 }
 ```
-In addition, you can enable your Neovim to start the LSP whenerver it enters a
-`.nt` file with this snippet in your `init.lua` or equivalent:
+In addition, you can enable your Neovim to start the LSP whenever it enters a
+`.ttl` file with this snippet in your `init.lua` or equivalent:
 ```lua
-vim.lsp.enable { 'nt_pref_ls' }
+vim.lsp.enable { 'ttl_pref_ls' }
 ```
 
 The hover functionality is accessed with 'K' in Normal mode by default. In
